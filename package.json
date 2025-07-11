@@ -6,7 +6,15 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest",
+    "test-coverage": "vitest run --coverage",
+    "check-format": "prettier --check 'src/**/*.{js,jsx,ts,tsx,json,css,md,mjs}'",
+    "check-lint": "eslint src -c eslint.config.mjs",
+    "check-types": "npx tsc --pretty --noEmit",
+    "test-ci": "vitest run --silent",
+    "check-all": "npm run check-format && npm run check-lint && npm run check-types && npm run test-ci && npm run build",
+    "format": "prettier --write 'src/**/*.{js,jsx,ts,tsx,json,css,md,mjs}'"
   },
   "dependencies": {
     "next": "15.3.5",
@@ -16,13 +24,20 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.6.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
+    "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }
