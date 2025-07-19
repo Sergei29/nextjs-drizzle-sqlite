@@ -31,7 +31,7 @@ const WorkoutCard = ({ workout, className }: Props) => {
       />
       <CardHeader>
         <CardTitle>{name}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardDescription className="text-xs">{description}</CardDescription>
         <CardAction>
           <DeleteButton id={id} action={deleteWorkout} />
         </CardAction>

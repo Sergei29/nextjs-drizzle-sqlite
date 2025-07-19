@@ -1,5 +1,6 @@
-import WorkoutForm from "@/components/forms/WorkoutForm"
 import type { Metadata } from "next"
+
+import WorkoutForm from "@/components/forms/WorkoutForm"
 
 export const metadata: Metadata = {}
 

@@ -21,37 +21,46 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 import { createWorkoutSchema } from "@/lib/validation"
-import { createNewWorkout } from "@/lib/actions/workouts"
+import { createNewWorkout, updateWorkout } from "@/lib/actions/workouts"
 import { paths } from "@/lib/utils"
 
 interface Props {
-  initialValues?: z.output<typeof createWorkoutSchema>
+  initialValues?: z.output<typeof createWorkoutSchema> & { id: number }
 }
 
 const WorkoutForm = ({ initialValues }: Props) => {
   const router = useRouter()
+  const { id: currentWorkoutId, ...currentWorkoutFields } = initialValues || {}
+
   const form = useForm<z.infer<typeof createWorkoutSchema>>({
     resolver: zodResolver(createWorkoutSchema),
-    defaultValues: initialValues ?? {
-      name: "",
-      restTime: 0,
-      description: "",
-    },
+    defaultValues: initialValues
+      ? currentWorkoutFields
+      : {
+          name: "",
+          restTime: 0,
+          description: "",
+        },
   })
   const { isLoading, isSubmitting } = form.formState
 
   const onSubmit = async (input: z.output<typeof createWorkoutSchema>) => {
-    const response = await createNewWorkout({
-      input,
-    })
+    const response = currentWorkoutId
+      ? await updateWorkout({
+          input,
+          workoutId: currentWorkoutId,
+        })
+      : await createNewWorkout({
+          input,
+        })
 
     if (response.success) {
-      toast("Workout has been created", {
+      toast(`Workout has been ${currentWorkoutId ? "updated" : "created"}.`, {
         description: `"${response.data.name}"`,
       })
       router.push(paths.workouts())
     } else {
-      toast("Workout create error")
+      toast(`Workout ${currentWorkoutId ? "update" : "create"} error.`)
       Object.entries(response.errors).forEach(([key, value]) => {
         form.setError(
           key as
@@ -142,7 +151,7 @@ const WorkoutForm = ({ initialValues }: Props) => {
             className="cursor-pointer"
             disabled={isLoading || isSubmitting}
           >
-            {initialValues ? "edit" : "create"}
+            {currentWorkoutId ? "edit" : "create"}
           </Button>
         </div>
       </form>

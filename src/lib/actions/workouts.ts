@@ -35,6 +35,9 @@ export const getWorkoutById = async (workoutId: number) => {
     where(fields, { eq }) {
       return eq(fields.id, workoutId)
     },
+    with: {
+      sets: true,
+    },
   })
 
   return data
