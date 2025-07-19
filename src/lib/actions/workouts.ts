@@ -1,16 +1,18 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { eq } from "drizzle-orm"
 
 import { ServerActionReturn } from "@/types"
 
 import { createWorkoutSchema, updateWorkoutSchema } from "@/lib/validation"
-import { getErrorMessage } from "@/lib/utils"
+import { getErrorMessage, paths } from "@/lib/utils"
 import { workouts } from "@drizzle/schema"
 import { db } from "@/lib/db"
 
-export const getWorkouts = async () => {
+export const getWorkouts = async (limit?: number) => {
   const data = await db.query.workouts.findMany({
+    limit,
     with: {
       sets: {
         columns: {
@@ -68,6 +70,9 @@ export const createNewWorkout = async ({
       })
       .returning()
 
+    revalidatePath(paths.home())
+    revalidatePath(paths.workouts())
+
     return {
       success: true,
       data: {
@@ -117,6 +122,9 @@ export const updateWorkout = async ({
       .where(eq(workouts.id, workoutId))
       .returning()
 
+    revalidatePath(paths.home())
+    revalidatePath(paths.workouts())
+
     return {
       success: true,
       data: {
@@ -140,16 +148,26 @@ export const deleteWorkout = async (
     name: string
   }>
 > => {
-  const [deletedWorkout] = await db
-    .delete(workouts)
-    .where(eq(workouts.id, workoutId))
-    .returning()
+  try {
+    const [deletedWorkout] = await db
+      .delete(workouts)
+      .where(eq(workouts.id, workoutId))
+      .returning()
 
-  return {
-    success: true,
-    data: {
-      id: deletedWorkout.id,
-      name: deletedWorkout.name,
-    },
+    revalidatePath(paths.home())
+    revalidatePath(paths.workouts())
+
+    return {
+      success: true,
+      data: {
+        id: deletedWorkout.id,
+        name: deletedWorkout.name,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      errors: [{ root: getErrorMessage(error) }],
+    }
   }
 }

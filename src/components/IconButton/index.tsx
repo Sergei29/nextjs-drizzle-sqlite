@@ -1,6 +1,6 @@
 "use client"
 
-import React, { type ReactNode } from "react"
+import React, { type ReactNode, ComponentProps } from "react"
 import Link, { LinkProps } from "next/link"
 
 import {
@@ -11,22 +11,45 @@ import {
 import { Button } from "@/components/ui/button"
 
 interface Props {
-  href: LinkProps["href"]
+  href?: LinkProps["href"]
   children: ReactNode
   className?: string
   title?: string
+  type?: ComponentProps<"button">["type"]
+  disabled?: boolean
 }
 
-const IconButton = ({ href, title, children, className }: Props) => {
+const IconButton = ({
+  href,
+  title,
+  children,
+  className,
+  type,
+  disabled,
+}: Props) => {
   return !title ? (
-    <Button asChild variant="outline" size="icon" className={className}>
-      <Link href={href}>{children}</Link>
+    <Button
+      type={type}
+      asChild={!!href}
+      variant="outline"
+      size="icon"
+      className={className}
+      disabled={!href ? disabled : undefined}
+    >
+      {href ? <Link href={href}>{children}</Link> : <>{children}</>}
     </Button>
   ) : (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button asChild variant="outline" size="icon" className={className}>
-          <Link href={href}>{children}</Link>
+        <Button
+          type={type}
+          asChild={!!href}
+          variant="outline"
+          size="icon"
+          className={className}
+          disabled={!href ? disabled : undefined}
+        >
+          {href ? <Link href={href}>{children}</Link> : <>{children}</>}
         </Button>
       </TooltipTrigger>
       <TooltipContent>

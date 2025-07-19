@@ -1,15 +1,43 @@
+import { redirect } from "next/navigation"
+import { SquarePen } from "lucide-react"
+
 import type { Metadata } from "next"
 import type { PageProps } from "@/types"
+
+import { Card, CardFooter, CardContent, CardHeader } from "@/components/ui/card"
+import DeleteButton from "@/components/DeleteButton"
+import IconButton from "@/components/IconButton"
+import { getWorkoutById, deleteWorkout } from "@/lib/actions/workouts"
+import { paths } from "@/lib/utils"
 
 export const metadata: Metadata = {}
 
 const WorkoutDetailsPage = async ({ params }: PageProps<{ id: string }>) => {
   const { id } = await params
+  const workout = await getWorkoutById(parseInt(id, 10))
+
+  if (!workout) {
+    return redirect(paths.workouts())
+  }
+
   return (
     <>
-      <h1 className="text-3xl font-bold underline text-center">
-        Workout Details page: {id}
-      </h1>
+      <Card>
+        <CardHeader>
+          <h1 className="text-3xl font-bold underline text-center">
+            {workout.name}
+          </h1>
+        </CardHeader>
+        <CardContent>
+          <p>{workout.description}</p>
+        </CardContent>
+        <CardFooter className="justify-end gap-4">
+          <IconButton title="Edit" href={paths.workouts(`${workout.id}/edit`)}>
+            <SquarePen />
+          </IconButton>
+          <DeleteButton id={workout.id} action={deleteWorkout} />
+        </CardFooter>
+      </Card>
     </>
   )
 }
