@@ -1,8 +1,7 @@
 import React from "react"
 import { Dumbbell } from "lucide-react"
-import Link from "next/link"
 
-import { Button } from "@/components/ui/button"
+import IconButton from "@/components/IconButton"
 import { paths } from "@/lib/utils"
 import ThemeToggle from "./ThemeToggle"
 import NavLink from "./NavLink"
@@ -20,17 +19,9 @@ const Navigation = () => {
       <ul className="flex gap-2 items-center">
         {navLinks.map(({ id, title, href }) =>
           title === "Home" ? (
-            <Button
-              key={id}
-              asChild
-              variant="outline"
-              size="icon"
-              className="mr-8"
-            >
-              <Link href={href}>
-                <Dumbbell />
-              </Link>
-            </Button>
+            <IconButton key={id} href={href}>
+              <Dumbbell />
+            </IconButton>
           ) : (
             <NavLink key={id} href={href}>
               {title}
