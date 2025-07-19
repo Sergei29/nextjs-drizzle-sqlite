@@ -13,3 +13,8 @@ export const paths = {
   exercises: (slug?: string | number) =>
     slug ? `/exercises/${slug}` : "/exercises",
 }
+
+export const getErrorMessage = (error: unknown) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return error instanceof Error ? error.message : (error as any).toString()
+}

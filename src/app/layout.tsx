@@ -24,15 +24,15 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <header className="p-4">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-5xl mx-auto">
               <Navigation />
             </div>
           </header>
-          <main className="max-w-7xl mx-auto p-4 h-[calc(100vh-85px-60px)]">
+          <main className="max-w-5xl mx-auto p-4 h-[calc(100vh-85px-60px)]">
             {children}
           </main>
           <footer className="mt-auto p-4">
-            <div className="max-w-7xl mx-auto text-xs">
+            <div className="max-w-5xl mx-auto text-xs">
               <p className="text-center">Drizzle ORM | Sqlite | Next.js</p>
             </div>
           </footer>

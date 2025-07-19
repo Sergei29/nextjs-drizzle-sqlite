@@ -4,9 +4,10 @@ import { eq } from "drizzle-orm"
 
 import { ServerActionReturn } from "@/types"
 
+import { createWorkoutSchema, updateWorkoutSchema } from "@/lib/validation"
+import { getErrorMessage } from "@/lib/utils"
 import { workouts } from "@drizzle/schema"
 import { db } from "@/lib/db"
-import { createWorkoutSchema, updateWorkoutSchema } from "@/lib/validation"
 
 export const getWorkouts = async () => {
   const data = await db.query.workouts.findMany({
@@ -47,31 +48,38 @@ export const createNewWorkout = async ({
     name: string
   }>
 > => {
-  const validation = createWorkoutSchema.safeParse(input)
+  try {
+    const validation = createWorkoutSchema.safeParse(input)
 
-  if (!validation.success) {
-    const errors = validation.error.issues.map(({ message, path }) => ({
-      [path[0]]: message,
-    }))
+    if (!validation.success) {
+      const errors = validation.error.issues.map(({ message, path }) => ({
+        [path[0]]: message,
+      }))
 
-    return { success: false, errors }
-  }
+      return { success: false, errors }
+    }
 
-  const [newWorkout] = await db
-    .insert(workouts)
-    .values({
-      name: validation.data.name,
-      description: validation.data.description,
-      restTime: validation.data.restTime,
-    })
-    .returning()
+    const [newWorkout] = await db
+      .insert(workouts)
+      .values({
+        name: validation.data.name,
+        description: validation.data.description,
+        restTime: validation.data.restTime,
+      })
+      .returning()
 
-  return {
-    success: true,
-    data: {
-      id: newWorkout.id,
-      name: newWorkout.name,
-    },
+    return {
+      success: true,
+      data: {
+        id: newWorkout.id,
+        name: newWorkout.name,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      errors: [{ root: getErrorMessage(error) }],
+    }
   }
 }
 
@@ -87,33 +95,40 @@ export const updateWorkout = async ({
     name: string
   }>
 > => {
-  const validation = updateWorkoutSchema.safeParse(input)
+  try {
+    const validation = updateWorkoutSchema.safeParse(input)
 
-  if (!validation.success) {
-    const errors = validation.error.issues.map(({ message, path }) => ({
-      [path[0]]: message,
-    }))
+    if (!validation.success) {
+      const errors = validation.error.issues.map(({ message, path }) => ({
+        [path[0]]: message,
+      }))
 
-    return { success: false, errors }
-  }
+      return { success: false, errors }
+    }
 
-  const [updatedWorkout] = await db
-    .update(workouts)
-    .set({
-      name: validation.data.name,
-      description: validation.data.description,
-      restTime: validation.data.restTime,
-      updatedAt: new Date().toISOString(),
-    })
-    .where(eq(workouts.id, workoutId))
-    .returning()
+    const [updatedWorkout] = await db
+      .update(workouts)
+      .set({
+        name: validation.data.name,
+        description: validation.data.description,
+        restTime: validation.data.restTime,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(workouts.id, workoutId))
+      .returning()
 
-  return {
-    success: true,
-    data: {
-      id: updatedWorkout.id,
-      name: updatedWorkout.name,
-    },
+    return {
+      success: true,
+      data: {
+        id: updatedWorkout.id,
+        name: updatedWorkout.name,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      errors: [{ root: getErrorMessage(error) }],
+    }
   }
 }
 

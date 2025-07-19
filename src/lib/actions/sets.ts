@@ -4,9 +4,10 @@ import { eq } from "drizzle-orm"
 
 import { ServerActionReturn } from "@/types"
 
+import { createSetSchema, updateSetSchema } from "@/lib/validation"
+import { getErrorMessage } from "@/lib/utils"
 import { sets } from "@drizzle/schema"
 import { db } from "@/lib/db"
-import { createSetSchema, updateSetSchema } from "@/lib/validation"
 
 export const getSetsBy = async ({ workoutId }: { workoutId?: number }) => {
   const data = await db.query.sets.findMany({
@@ -42,33 +43,40 @@ export const createNewSet = async ({
     name: string
   }>
 > => {
-  const validation = createSetSchema.safeParse(input)
+  try {
+    const validation = createSetSchema.safeParse(input)
 
-  if (!validation.success) {
-    const errors = validation.error.issues.map(({ message, path }) => ({
-      [path[0]]: message,
-    }))
+    if (!validation.success) {
+      const errors = validation.error.issues.map(({ message, path }) => ({
+        [path[0]]: message,
+      }))
 
-    return { success: false, errors }
-  }
+      return { success: false, errors }
+    }
 
-  const [newSet] = await db
-    .insert(sets)
-    .values({
-      name: validation.data.name,
-      description: validation.data.description,
-      restTime: validation.data.restTime,
-      setNumber: validation.data.setNumber,
-      workoutId: validation.data.workoutId,
-    })
-    .returning()
+    const [newSet] = await db
+      .insert(sets)
+      .values({
+        name: validation.data.name,
+        description: validation.data.description,
+        restTime: validation.data.restTime,
+        setNumber: validation.data.setNumber,
+        workoutId: validation.data.workoutId,
+      })
+      .returning()
 
-  return {
-    success: true,
-    data: {
-      id: newSet.id,
-      name: newSet.name ?? `Set ${newSet.setNumber}`,
-    },
+    return {
+      success: true,
+      data: {
+        id: newSet.id,
+        name: newSet.name ?? `Set ${newSet.setNumber}`,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      errors: [{ root: getErrorMessage(error) }],
+    }
   }
 }
 
@@ -84,34 +92,41 @@ export const updateSet = async ({
     name: string
   }>
 > => {
-  const validation = updateSetSchema.safeParse(input)
+  try {
+    const validation = updateSetSchema.safeParse(input)
 
-  if (!validation.success) {
-    const errors = validation.error.issues.map(({ message, path }) => ({
-      [path[0]]: message,
-    }))
+    if (!validation.success) {
+      const errors = validation.error.issues.map(({ message, path }) => ({
+        [path[0]]: message,
+      }))
 
-    return { success: false, errors }
-  }
+      return { success: false, errors }
+    }
 
-  const [updatedSet] = await db
-    .update(sets)
-    .set({
-      name: validation.data.name,
-      description: validation.data.description,
-      restTime: validation.data.restTime,
-      setNumber: validation.data.setNumber,
-      workoutId: validation.data.workoutId,
-    })
-    .where(eq(sets.id, setId))
-    .returning()
+    const [updatedSet] = await db
+      .update(sets)
+      .set({
+        name: validation.data.name,
+        description: validation.data.description,
+        restTime: validation.data.restTime,
+        setNumber: validation.data.setNumber,
+        workoutId: validation.data.workoutId,
+      })
+      .where(eq(sets.id, setId))
+      .returning()
 
-  return {
-    success: true,
-    data: {
-      id: updatedSet.id,
-      name: updatedSet.name ?? `Set ${updatedSet.setNumber}`,
-    },
+    return {
+      success: true,
+      data: {
+        id: updatedSet.id,
+        name: updatedSet.name ?? `Set ${updatedSet.setNumber}`,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      errors: [{ root: getErrorMessage(error) }],
+    }
   }
 }
 
