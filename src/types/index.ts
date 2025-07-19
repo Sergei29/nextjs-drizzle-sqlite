@@ -5,3 +5,27 @@ export type PageProps<
   params: Promise<P>
   searchParams: Promise<Q>
 }
+
+export type ServerActionReturn<D> =
+  | {
+      success: true
+      data: D
+    }
+  | {
+      success: false
+      errors: Record<string, string>[]
+    }
+
+export type WorkoutSummary = {
+  id: number
+  name: string
+  createdAt: string | null
+  updatedAt: string | null
+  description: string | null
+  restTime: number
+  sets: {
+    id: number
+    name: string | null
+    setNumber: number
+  }[]
+}
