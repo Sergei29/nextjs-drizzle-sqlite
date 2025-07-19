@@ -5,3 +5,13 @@ export type PageProps<
   params: Promise<P>
   searchParams: Promise<Q>
 }
+
+export type ServerActionReturn<D> =
+  | {
+      success: true
+      data: D
+    }
+  | {
+      success: false
+      errors: Record<string, string>[]
+    }
