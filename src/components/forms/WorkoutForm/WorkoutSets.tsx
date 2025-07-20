@@ -1,8 +1,16 @@
 "use client"
 
-import React, { useEffect, useState, memo } from "react"
+import React, {
+  useEffect,
+  useState,
+  memo,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react"
 import { usePathname } from "next/navigation"
-import { Eye, SquarePen } from "lucide-react"
+
+import type { SetsState } from "./types"
 
 import {
   Dialog,
@@ -14,27 +22,48 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import IconButton from "@/components/IconButton"
-import { getErrorMessage, paths } from "@/lib/utils"
+import { getErrorMessage } from "@/lib/utils"
 import { getSetsBy } from "@/lib/actions/sets"
 import AddSetNavButton from "./AddSetNavButton"
-
-interface State {
-  isLoading: boolean
-  error: null | string
-  data: Awaited<ReturnType<typeof getSetsBy>>
-}
+import WorkoutSetsSortable from "./WorkoutSetsSortable"
 
 interface Props {
   workoutId: number
 }
 
-const useFetchSetsByWorkout = ({ workoutId }: Props) => {
-  const [workoutSets, setWorkoutSets] = useState<State>({
+const useFetchSetsByWorkout = ({
+  workoutId,
+}: Props): [
+  SetsState,
+  Dispatch<SetStateAction<SetsState>>,
+  () => boolean,
+  () => void,
+] => {
+  const [workoutSets, setWorkoutSets] = useState<SetsState>({
     isLoading: false,
     error: null,
     data: [],
   })
+  const initialSets = useRef<SetsState["data"]>([])
+
+  const isOrderChanged = () => {
+    const currentOrder = workoutSets.data
+      .map((current) => current.id)
+      .join(", ")
+    const initialOrder = initialSets.current
+      .map((current) => current.id)
+      .join(", ")
+
+    return currentOrder !== initialOrder
+  }
+
+  const handleReset = () => {
+    if (!isOrderChanged()) return
+    setWorkoutSets((current) => ({
+      ...current,
+      data: initialSets.current,
+    }))
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -50,6 +79,7 @@ const useFetchSetsByWorkout = ({ workoutId }: Props) => {
 
         if (isMounted) {
           setWorkoutSets(() => ({ data: sets, isLoading: false, error: null }))
+          initialSets.current = sets
         }
       } catch (err) {
         if (isMounted) {
@@ -69,21 +99,33 @@ const useFetchSetsByWorkout = ({ workoutId }: Props) => {
     }
   }, [workoutId])
 
-  return workoutSets
+  return [workoutSets, setWorkoutSets, isOrderChanged, handleReset]
 }
 
 const WorkoutSets = ({ workoutId }: Props) => {
   const pathname = usePathname()
-  const sets = useFetchSetsByWorkout({ workoutId })
+  const [workoutSets, setWorkoutSets, isOrderChanged, handleReset] =
+    useFetchSetsByWorkout({
+      workoutId,
+    })
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleConfirm = () => {
+    if (!isOrderChanged()) return
     setIsModalOpen(false)
+    console.log(
+      "update new Order: ",
+      workoutSets.data.map(({ id, name, setOrder }) => ({
+        id,
+        name,
+        setOrder,
+      })),
+    )
   }
 
   return (
     <>
-      <h3 className="text-lg font-semibold">{`Currently ${sets.data.length} sets in the workout`}</h3>
+      <h3 className="text-lg font-semibold">{`Currently ${workoutSets.data.length} sets in the workout`}</h3>
       <div className="flex gap-4">
         <AddSetNavButton workoutId={workoutId} pathname={pathname}>
           Add new set
@@ -91,7 +133,7 @@ const WorkoutSets = ({ workoutId }: Props) => {
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
             <Button
-              disabled={!sets.data.length}
+              disabled={!workoutSets.data.length}
               type="button"
               variant="outline"
             >
@@ -107,37 +149,13 @@ const WorkoutSets = ({ workoutId }: Props) => {
                 changed configuration;
               </DialogDescription>
             </DialogHeader>
-            <div>
-              <ul className="flex flex-col gap-2 pl-8">
-                {sets.data.map((set) => {
-                  return (
-                    <li
-                      key={set.id}
-                      className="flex items-center gap-2 p-2 rounded-lg border border-slate-300 w-full"
-                    >
-                      <span>{set.name}</span>
-                      <IconButton
-                        href={{
-                          pathname: paths.sets(`${set.id}/edit`),
-                          query: {
-                            workoutId,
-                            callbackUrl: pathname,
-                          },
-                        }}
-                        title="edit set"
-                        className="ml-auto"
-                      >
-                        <SquarePen />
-                      </IconButton>
-                      <IconButton href={paths.sets(set.id)} title="view set">
-                        <Eye />
-                      </IconButton>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-            <DialogFooter className="justify-end">
+
+            <WorkoutSetsSortable state={[workoutSets, setWorkoutSets]} />
+
+            <DialogFooter className="justify-end gap-4">
+              <Button type="button" onClick={handleReset} variant="outline">
+                Reset
+              </Button>
               <Button type="button" onClick={handleConfirm}>
                 Confirm
               </Button>
