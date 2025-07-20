@@ -45,6 +45,7 @@ export const exercises = sqliteTable("exercises", {
   imageUrl: text("image_url"), // optional image URL
   reps: integer("reps"),
   duration: integer("duration"),
+  exerciseNumber: integer("exercise_number").notNull(),
 })
 
 export const setExercises = sqliteTable(
@@ -61,3 +62,14 @@ export const setExercises = sqliteTable(
     pk: primaryKey({ columns: [table.setId, table.exerciseId] }),
   }),
 )
+
+export const setExercisesRelations = relations(setExercises, ({ one }) => ({
+  set: one(sets, {
+    fields: [setExercises.setId],
+    references: [sets.id],
+  }),
+  exercise: one(exercises, {
+    fields: [setExercises.exerciseId],
+    references: [exercises.id],
+  }),
+}))

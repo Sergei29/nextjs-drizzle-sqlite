@@ -1,11 +1,12 @@
 "use server"
 
 import { eq } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 
 import { ServerActionReturn } from "@/types"
 
-import { createSetSchema, updateSetSchema } from "@/lib/validation"
-import { getErrorMessage } from "@/lib/utils"
+import { setSchema } from "@/lib/validation"
+import { getErrorMessage, paths } from "@/lib/utils"
 import { sets } from "@drizzle/schema"
 import { db } from "@/lib/db"
 
@@ -23,8 +24,13 @@ export const getSetsBy = async ({ workoutId }: { workoutId?: number }) => {
             columns: {
               id: true,
               name: true,
+              exerciseNumber: true,
             },
           },
+        },
+
+        orderBy(fields, { asc }) {
+          return asc(fields.exerciseId)
         },
       },
     },
@@ -44,7 +50,7 @@ export const createNewSet = async ({
   }>
 > => {
   try {
-    const validation = createSetSchema.safeParse(input)
+    const validation = setSchema.safeParse(input)
 
     if (!validation.success) {
       const errors = validation.error.issues.map(({ message, path }) => ({
@@ -64,6 +70,9 @@ export const createNewSet = async ({
         workoutId: validation.data.workoutId,
       })
       .returning()
+
+    revalidatePath(paths.sets())
+    revalidatePath(paths.workouts(newSet.workoutId))
 
     return {
       success: true,
@@ -93,7 +102,7 @@ export const updateSet = async ({
   }>
 > => {
   try {
-    const validation = updateSetSchema.safeParse(input)
+    const validation = setSchema.safeParse(input)
 
     if (!validation.success) {
       const errors = validation.error.issues.map(({ message, path }) => ({
@@ -115,6 +124,8 @@ export const updateSet = async ({
       .where(eq(sets.id, setId))
       .returning()
 
+    revalidatePath(paths.sets())
+    revalidatePath(paths.workouts(updatedSet.workoutId))
     return {
       success: true,
       data: {
@@ -142,6 +153,9 @@ export const deleteSet = async (
     .delete(sets)
     .where(eq(sets.id, setId))
     .returning()
+
+  revalidatePath(paths.sets())
+  revalidatePath(paths.workouts(deletedSet.workoutId))
 
   return {
     success: true,

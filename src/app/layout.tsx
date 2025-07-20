@@ -28,7 +28,7 @@ export default function RootLayout({
               <Navigation />
             </div>
           </header>
-          <main className="max-w-5xl mx-auto p-4 h-[calc(100vh-85px-60px)]">
+          <main className="max-w-5xl mx-auto p-4 min-h-[calc(100vh-85px-60px)]">
             {children}
           </main>
           <footer className="mt-auto p-4">

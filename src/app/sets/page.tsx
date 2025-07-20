@@ -1,8 +1,10 @@
+import { Suspense } from "react"
 import { Plus } from "lucide-react"
 
 import type { Metadata } from "next"
 
 import IconButton from "@/components/IconButton"
+import SetsList from "@/components/SetsList"
 import { paths } from "@/lib/utils"
 
 export const metadata: Metadata = {}
@@ -18,6 +20,10 @@ const SetsListPage = async () => {
           <Plus />
         </IconButton>
       </div>
+
+      <Suspense fallback={<p>Loading sets...</p>}>
+        <SetsList />
+      </Suspense>
     </>
   )
 }
