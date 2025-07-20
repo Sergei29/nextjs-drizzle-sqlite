@@ -18,10 +18,10 @@ export const getWorkouts = async (limit?: number) => {
         columns: {
           id: true,
           name: true,
-          setNumber: true,
+          setOrder: true,
         },
         orderBy(fields, { asc }) {
-          return asc(fields.setNumber)
+          return asc(fields.setOrder)
         },
       },
     },

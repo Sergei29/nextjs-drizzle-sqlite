@@ -40,7 +40,6 @@ interface Props {
   setExercises?: {
     id: number
     name: string
-    exerciseNumber: number
   }[]
   workoutOptions: {
     name: string
@@ -66,7 +65,7 @@ const SetForm = ({
           description: "",
           restTime: 0,
           workoutId: workoutId ?? 0,
-          setNumber: 0,
+          setOrder: 0,
         },
   })
   const { isLoading, isSubmitting } = form.formState
@@ -97,7 +96,7 @@ const SetForm = ({
             | "name"
             | "description"
             | "restTime"
-            | "setNumber"
+            | "setOrder"
             | "workoutId"
             | "root"
             | `root.${string}`,
@@ -151,7 +150,7 @@ const SetForm = ({
 
           <FormField
             control={form.control}
-            name="setNumber"
+            name="setOrder"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Set the order</FormLabel>
@@ -244,15 +243,13 @@ const SetForm = ({
           </CardHeader>
           <CardContent>
             <ul className="grid sm:grid-cols-3 gap-2">
-              {setExercises.map(({ id, name, exerciseNumber }) => {
+              {setExercises.map(({ id, name }) => {
                 return (
                   <li
                     key={id}
                     className="p-2 rounded-lg border border-slate-300 flex flex-col gap-2"
                   >
-                    <span>
-                      {exerciseNumber}. {name}
-                    </span>
+                    <span>{name}</span>
                     <span className="flex gap-2">
                       <Link href={paths.exercises(id)}>edit</Link>
                     </span>

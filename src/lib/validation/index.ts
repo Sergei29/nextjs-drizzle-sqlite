@@ -20,7 +20,7 @@ export const setSchema = z.object({
       1,
       "Rest between exercises in seconds required",
     ) as z.ZodCoercedNumber<number>,
-  setNumber: z.coerce
+  setOrder: z.coerce
     .number()
     .min(1, "Set order is required") as z.ZodCoercedNumber<number>,
   workoutId: z.coerce

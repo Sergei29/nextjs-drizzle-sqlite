@@ -19,18 +19,14 @@ export const getSetsBy = async ({ workoutId }: { workoutId?: number }) => {
       : undefined,
     with: {
       setExercises: {
+        orderBy: (fields, { asc }) => asc(fields.exerciseOrder),
         with: {
           exercise: {
             columns: {
               id: true,
               name: true,
-              exerciseNumber: true,
             },
           },
-        },
-
-        orderBy(fields, { asc }) {
-          return asc(fields.exerciseId)
         },
       },
     },
@@ -66,7 +62,7 @@ export const createNewSet = async ({
         name: validation.data.name,
         description: validation.data.description,
         restTime: validation.data.restTime,
-        setNumber: validation.data.setNumber,
+        setOrder: validation.data.setOrder,
         workoutId: validation.data.workoutId,
       })
       .returning()
@@ -78,7 +74,7 @@ export const createNewSet = async ({
       success: true,
       data: {
         id: newSet.id,
-        name: newSet.name ?? `Set ${newSet.setNumber}`,
+        name: newSet.name ?? `Set ${newSet.setOrder}`,
       },
     }
   } catch (error) {
@@ -118,7 +114,7 @@ export const updateSet = async ({
         name: validation.data.name,
         description: validation.data.description,
         restTime: validation.data.restTime,
-        setNumber: validation.data.setNumber,
+        setOrder: validation.data.setOrder,
         workoutId: validation.data.workoutId,
       })
       .where(eq(sets.id, setId))
@@ -130,7 +126,7 @@ export const updateSet = async ({
       success: true,
       data: {
         id: updatedSet.id,
-        name: updatedSet.name ?? `Set ${updatedSet.setNumber}`,
+        name: updatedSet.name ?? `Set ${updatedSet.setOrder}`,
       },
     }
   } catch (error) {
@@ -161,7 +157,7 @@ export const deleteSet = async (
     success: true,
     data: {
       id: deletedSet.id,
-      name: deletedSet.name ?? `Set ${deletedSet.setNumber}`,
+      name: deletedSet.name ?? `Set ${deletedSet.setOrder}`,
     },
   }
 }

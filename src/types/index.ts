@@ -26,6 +26,6 @@ export type WorkoutSummary = {
   sets: {
     id: number
     name: string | null
-    setNumber: number
+    setOrder: number
   }[]
 }
