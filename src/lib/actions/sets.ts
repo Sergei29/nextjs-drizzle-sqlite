@@ -1,6 +1,6 @@
 "use server"
 
-import { eq } from "drizzle-orm"
+import { eq, and, not } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { ServerActionReturn } from "@/types"
@@ -104,6 +104,103 @@ export const createNewSet = async ({
   }
 }
 
+type UpdateSetParams = {
+  id: number
+  name: string
+  restTime: number
+  setOrder: number
+  workoutId: number
+  description?: string | null | undefined
+}
+
+async function updateSetWithAutoSwap(params: UpdateSetParams) {
+  const {
+    id,
+    name,
+    restTime,
+    setOrder: newSetOrder,
+    workoutId,
+    description,
+  } = params
+
+  return await db.transaction(async (tx) => {
+    // Step 1: Get current set
+    const [currentSet] = await tx.select().from(sets).where(eq(sets.id, id))
+
+    if (!currentSet) {
+      throw new Error("Set not found")
+    }
+
+    const currentSetOrder = currentSet.setOrder
+
+    // Step 2: If setOrder is unchanged, no need to proceed with swap logic
+    if (currentSetOrder === newSetOrder) {
+      const [updated] = await tx
+        .update(sets)
+        .set({ name, restTime, setOrder: newSetOrder, workoutId, description })
+        .where(eq(sets.id, id))
+        .returning()
+      return updated
+    }
+
+    // Step 3: Check for a conflicting set
+    const [conflictingSet] = await tx
+      .select()
+      .from(sets)
+      .where(
+        and(
+          eq(sets.workoutId, workoutId),
+          eq(sets.setOrder, newSetOrder),
+          not(eq(sets.id, id)),
+        ),
+      )
+
+    if (conflictingSet) {
+      // Step 3a: Move current set to temporary order (-1)
+      await tx
+        .update(sets)
+        .set({ setOrder: -1 }) // TEMP value must not conflict with any real setOrder
+        .where(eq(sets.id, id))
+
+      // Step 3b: Move conflicting set to the currentSetOrder
+      await tx
+        .update(sets)
+        .set({ setOrder: currentSetOrder })
+        .where(eq(sets.id, conflictingSet.id))
+
+      // Step 3c: Now move current set to desired newSetOrder
+      const [finalUpdate] = await tx
+        .update(sets)
+        .set({
+          name,
+          restTime,
+          setOrder: newSetOrder,
+          workoutId,
+          description,
+        })
+        .where(eq(sets.id, id))
+        .returning()
+
+      return finalUpdate
+    } else {
+      // No conflict — safe to update directly
+      const [updated] = await tx
+        .update(sets)
+        .set({
+          name,
+          restTime,
+          setOrder: newSetOrder,
+          workoutId,
+          description,
+        })
+        .where(eq(sets.id, id))
+        .returning()
+
+      return updated
+    }
+  })
+}
+
 export const updateSet = async ({
   setId,
   input,
@@ -127,17 +224,33 @@ export const updateSet = async ({
       return { success: false, errors }
     }
 
-    const [updatedSet] = await db
-      .update(sets)
-      .set({
-        name: validation.data.name,
-        description: validation.data.description,
-        restTime: validation.data.restTime,
-        setOrder: validation.data.setOrder,
-        workoutId: validation.data.workoutId,
-      })
-      .where(eq(sets.id, setId))
-      .returning()
+    const updatedSet = await updateSetWithAutoSwap({
+      ...validation.data,
+      id: setId,
+    })
+
+    // const updatedSet = await db.transaction(async (tx) => {
+    //   // Step 1: Move temporarily out of the way
+    //   await tx
+    //     .update(sets)
+    //     .set({ setOrder: 9999 }) // some high temp number
+    //     .where(eq(sets.id, setId))
+
+    //   // Step 2: Move to desired position
+    //   const [updatedSet] = await tx
+    //     .update(sets)
+    //     .set({
+    //       name: validation.data.name,
+    //       description: validation.data.description,
+    //       restTime: validation.data.restTime,
+    //       setOrder: validation.data.setOrder,
+    //       workoutId: validation.data.workoutId,
+    //     })
+    //     .where(eq(sets.id, setId))
+    //     .returning()
+
+    //   return updatedSet
+    // })
 
     revalidatePath(paths.sets())
     revalidatePath(paths.workouts(updatedSet.workoutId))
@@ -149,6 +262,7 @@ export const updateSet = async ({
       },
     }
   } catch (error) {
+    console.log("error :>> ", error)
     return {
       success: false,
       errors: [{ root: getErrorMessage(error) }],
@@ -178,5 +292,49 @@ export const deleteSet = async (
       id: deletedSet.id,
       name: deletedSet.name ?? `Set ${deletedSet.setOrder}`,
     },
+  }
+}
+
+export const reorderSets = async ({
+  reorderedSets,
+}: {
+  reorderedSets: { id: number; setOrder: number; workoutId: number }[]
+}): Promise<
+  ServerActionReturn<{
+    ids: number[]
+  }>
+> => {
+  try {
+    await db.transaction(async (tx) => {
+      // STEP 1: Temporarily shift all to avoid uniqueness conflict
+      await Promise.all(
+        reorderedSets.map(({ id, setOrder }) =>
+          tx
+            .update(sets)
+            .set({ setOrder: setOrder + 1000 }) // TEMP shift
+            .where(eq(sets.id, id)),
+        ),
+      )
+
+      // STEP 2: Apply actual new ordering
+      await Promise.all(
+        reorderedSets.map(({ id, setOrder }) =>
+          tx.update(sets).set({ setOrder }).where(eq(sets.id, id)),
+        ),
+      )
+    })
+
+    revalidatePath(paths.sets())
+    revalidatePath(paths.workouts(reorderedSets[0].workoutId))
+
+    return {
+      success: true,
+      data: { ids: reorderedSets.map(({ id }) => id) },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      errors: [{ root: getErrorMessage(error) }],
+    }
   }
 }

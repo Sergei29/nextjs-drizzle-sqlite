@@ -158,6 +158,7 @@ const SetForm = ({
                 <Select
                   onValueChange={field.onChange}
                   value={field.value.toString()}
+                  // disabled={!!currentSetId}
                 >
                   <FormControl>
                     <SelectTrigger className="min-w-[250px]">

@@ -43,10 +43,10 @@ const WorkoutSetsSortable = ({ state }: Props) => {
       const oldIndex = current.data.findIndex((item) => item.id === active.id)
       const newIndex = current.data.findIndex((item) => item.id === over.id)
       const newItems = arrayMove(current.data, oldIndex, newIndex)
-      // Optional: update sortOrder if syncing to backend
+      // Optional: update setOrder if syncing to backend
       const updatedItems = newItems.map((item, index) => ({
         ...item,
-        sortOrder: index + 1,
+        setOrder: index + 1,
       }))
 
       return {

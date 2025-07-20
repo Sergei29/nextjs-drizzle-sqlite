@@ -9,6 +9,7 @@ import React, {
   type SetStateAction,
 } from "react"
 import { usePathname } from "next/navigation"
+import { toast } from "sonner"
 
 import type { SetsState } from "./types"
 
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { getErrorMessage } from "@/lib/utils"
-import { getSetsBy } from "@/lib/actions/sets"
+import { getSetsBy, reorderSets } from "@/lib/actions/sets"
 import AddSetNavButton from "./AddSetNavButton"
 import WorkoutSetsSortable from "./WorkoutSetsSortable"
 
@@ -110,17 +111,25 @@ const WorkoutSets = ({ workoutId }: Props) => {
     })
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!isOrderChanged()) return
-    setIsModalOpen(false)
-    console.log(
-      "update new Order: ",
-      workoutSets.data.map(({ id, name, setOrder }) => ({
+
+    const response = await reorderSets({
+      reorderedSets: workoutSets.data.map(({ id, setOrder, workoutId }) => ({
         id,
-        name,
         setOrder,
+        workoutId,
       })),
-    )
+    })
+
+    if (response.success) {
+      toast("Sets reordered")
+      setIsModalOpen(false)
+    } else {
+      toast("Error reordering the sets", {
+        description: response.errors[0].root,
+      })
+    }
   }
 
   return (
