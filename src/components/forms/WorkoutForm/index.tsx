@@ -20,20 +20,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
-import { createWorkoutSchema } from "@/lib/validation"
+import { workoutSchema } from "@/lib/validation"
 import { createNewWorkout, updateWorkout } from "@/lib/actions/workouts"
 import { paths } from "@/lib/utils"
+import WorkoutSets from "./WorkoutSets"
 
 interface Props {
-  initialValues?: z.output<typeof createWorkoutSchema> & { id: number }
+  initialValues?: z.output<typeof workoutSchema> & { id: number }
 }
 
 const WorkoutForm = ({ initialValues }: Props) => {
   const router = useRouter()
   const { id: currentWorkoutId, ...currentWorkoutFields } = initialValues || {}
 
-  const form = useForm<z.infer<typeof createWorkoutSchema>>({
-    resolver: zodResolver(createWorkoutSchema),
+  const form = useForm<z.infer<typeof workoutSchema>>({
+    resolver: zodResolver(workoutSchema),
     defaultValues: initialValues
       ? currentWorkoutFields
       : {
@@ -44,7 +45,7 @@ const WorkoutForm = ({ initialValues }: Props) => {
   })
   const { isLoading, isSubmitting } = form.formState
 
-  const onSubmit = async (input: z.output<typeof createWorkoutSchema>) => {
+  const onSubmit = async (input: z.output<typeof workoutSchema>) => {
     const response = currentWorkoutId
       ? await updateWorkout({
           input,
@@ -135,6 +136,8 @@ const WorkoutForm = ({ initialValues }: Props) => {
             </FormItem>
           )}
         />
+
+        {currentWorkoutId && <WorkoutSets workoutId={currentWorkoutId} />}
 
         <div className="flex justify-end gap-4">
           <Button

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm"
 
 import { ServerActionReturn } from "@/types"
 
-import { createWorkoutSchema, updateWorkoutSchema } from "@/lib/validation"
+import { workoutSchema } from "@/lib/validation"
 import { getErrorMessage, paths } from "@/lib/utils"
 import { workouts } from "@drizzle/schema"
 import { db } from "@/lib/db"
@@ -18,12 +18,23 @@ export const getWorkouts = async (limit?: number) => {
         columns: {
           id: true,
           name: true,
-          setNumber: true,
+          setOrder: true,
         },
         orderBy(fields, { asc }) {
-          return asc(fields.setNumber)
+          return asc(fields.setOrder)
         },
       },
+    },
+  })
+
+  return data
+}
+
+export const getWorkoutSelectOptions = async () => {
+  const data = await db.query.workouts.findMany({
+    columns: {
+      id: true,
+      name: true,
     },
   })
 
@@ -54,7 +65,7 @@ export const createNewWorkout = async ({
   }>
 > => {
   try {
-    const validation = createWorkoutSchema.safeParse(input)
+    const validation = workoutSchema.safeParse(input)
 
     if (!validation.success) {
       const errors = validation.error.issues.map(({ message, path }) => ({
@@ -104,7 +115,7 @@ export const updateWorkout = async ({
   }>
 > => {
   try {
-    const validation = updateWorkoutSchema.safeParse(input)
+    const validation = workoutSchema.safeParse(input)
 
     if (!validation.success) {
       const errors = validation.error.issues.map(({ message, path }) => ({

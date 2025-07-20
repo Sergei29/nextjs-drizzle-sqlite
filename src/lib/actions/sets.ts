@@ -1,23 +1,44 @@
 "use server"
 
 import { eq } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 
 import { ServerActionReturn } from "@/types"
 
-import { createSetSchema, updateSetSchema } from "@/lib/validation"
-import { getErrorMessage } from "@/lib/utils"
+import { setSchema } from "@/lib/validation"
+import { getErrorMessage, paths } from "@/lib/utils"
 import { sets } from "@drizzle/schema"
 import { db } from "@/lib/db"
 
-export const getSetsBy = async ({ workoutId }: { workoutId?: number }) => {
+export const getSetsBy = async ({
+  workoutId,
+  id,
+}: {
+  workoutId?: number
+  id?: number
+}) => {
   const data = await db.query.sets.findMany({
     where: workoutId
       ? (fields, { eq }) => {
           return eq(fields.workoutId, workoutId)
         }
-      : undefined,
+      : id
+        ? (fields, { eq }) => {
+            return eq(fields.id, id)
+          }
+        : undefined,
+    orderBy: (fields, { asc }) => {
+      return workoutId ? asc(fields.setOrder) : asc(fields.workoutId)
+    },
     with: {
+      workout: {
+        columns: {
+          id: true,
+          name: true,
+        },
+      },
       setExercises: {
+        orderBy: (fields, { asc }) => asc(fields.exerciseOrder),
         with: {
           exercise: {
             columns: {
@@ -44,7 +65,7 @@ export const createNewSet = async ({
   }>
 > => {
   try {
-    const validation = createSetSchema.safeParse(input)
+    const validation = setSchema.safeParse(input)
 
     if (!validation.success) {
       const errors = validation.error.issues.map(({ message, path }) => ({
@@ -60,16 +81,19 @@ export const createNewSet = async ({
         name: validation.data.name,
         description: validation.data.description,
         restTime: validation.data.restTime,
-        setNumber: validation.data.setNumber,
+        setOrder: validation.data.setOrder,
         workoutId: validation.data.workoutId,
       })
       .returning()
+
+    revalidatePath(paths.sets())
+    revalidatePath(paths.workouts(newSet.workoutId))
 
     return {
       success: true,
       data: {
         id: newSet.id,
-        name: newSet.name ?? `Set ${newSet.setNumber}`,
+        name: newSet.name ?? `Set ${newSet.setOrder}`,
       },
     }
   } catch (error) {
@@ -93,7 +117,7 @@ export const updateSet = async ({
   }>
 > => {
   try {
-    const validation = updateSetSchema.safeParse(input)
+    const validation = setSchema.safeParse(input)
 
     if (!validation.success) {
       const errors = validation.error.issues.map(({ message, path }) => ({
@@ -109,17 +133,19 @@ export const updateSet = async ({
         name: validation.data.name,
         description: validation.data.description,
         restTime: validation.data.restTime,
-        setNumber: validation.data.setNumber,
+        setOrder: validation.data.setOrder,
         workoutId: validation.data.workoutId,
       })
       .where(eq(sets.id, setId))
       .returning()
 
+    revalidatePath(paths.sets())
+    revalidatePath(paths.workouts(updatedSet.workoutId))
     return {
       success: true,
       data: {
         id: updatedSet.id,
-        name: updatedSet.name ?? `Set ${updatedSet.setNumber}`,
+        name: updatedSet.name ?? `Set ${updatedSet.setOrder}`,
       },
     }
   } catch (error) {
@@ -143,11 +169,14 @@ export const deleteSet = async (
     .where(eq(sets.id, setId))
     .returning()
 
+  revalidatePath(paths.sets())
+  revalidatePath(paths.workouts(deletedSet.workoutId))
+
   return {
     success: true,
     data: {
       id: deletedSet.id,
-      name: deletedSet.name ?? `Set ${deletedSet.setNumber}`,
+      name: deletedSet.name ?? `Set ${deletedSet.setOrder}`,
     },
   }
 }
