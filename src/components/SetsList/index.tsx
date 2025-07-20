@@ -22,7 +22,7 @@ const SetsList = async ({ workoutId }: Props) => {
   const sets = await getSetsBy({ workoutId })
 
   return (
-    <ul className="grid grid-cols-3 gap-2 grid-rows-subgrid">
+    <ul className="grid grid-cols-3 gap-2 grid-rows-subgrid my-4">
       {sets.length === 0 && <li className="font-semibold"> 🤷‍♂️ no sets yet</li>}
       {sets.map((set) => {
         return (
@@ -33,7 +33,12 @@ const SetsList = async ({ workoutId }: Props) => {
                 className="absolute top-0 bottom-0 left-0 right-0 cursor-pointer rounded-lg"
               />
               <CardHeader>
-                <CardTitle>{set.name}</CardTitle>
+                <CardTitle className="flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground">
+                    workout: {set.workout.name}
+                  </span>
+                  <span>{set.name}</span>
+                </CardTitle>
                 <CardDescription className="text-xs">
                   {set.description}
                 </CardDescription>

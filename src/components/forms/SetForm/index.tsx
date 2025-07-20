@@ -3,7 +3,7 @@
 
 import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -54,6 +54,9 @@ const SetForm = ({
   workoutOptions,
 }: Props) => {
   const router = useRouter()
+  const search = useSearchParams()
+  const callbackUrl = search.get("callbackUrl")
+
   const { id: currentSetId, ...currentSetFields } = initialValues || {}
 
   const form = useForm<z.infer<typeof setSchema>>({
@@ -85,9 +88,7 @@ const SetForm = ({
         description: `"${response.data.name}"`,
       })
       // will navigate to workout page if came from Workout. or Set page if updating or Sets page if creating
-      router.push(
-        workoutId ? paths.workouts(workoutId) : paths.sets(initialValues?.id),
-      )
+      router.push(callbackUrl ? callbackUrl : paths.sets(initialValues?.id))
     } else {
       toast(`Set ${currentSetId ? "update" : "create"} error.`)
       Object.entries(response.errors).forEach(([key, value]) => {

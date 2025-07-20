@@ -10,14 +10,33 @@ import { getErrorMessage, paths } from "@/lib/utils"
 import { sets } from "@drizzle/schema"
 import { db } from "@/lib/db"
 
-export const getSetsBy = async ({ workoutId }: { workoutId?: number }) => {
+export const getSetsBy = async ({
+  workoutId,
+  id,
+}: {
+  workoutId?: number
+  id?: number
+}) => {
   const data = await db.query.sets.findMany({
     where: workoutId
       ? (fields, { eq }) => {
           return eq(fields.workoutId, workoutId)
         }
-      : undefined,
+      : id
+        ? (fields, { eq }) => {
+            return eq(fields.id, id)
+          }
+        : undefined,
+    orderBy: (fields, { asc }) => {
+      return workoutId ? asc(fields.setOrder) : asc(fields.workoutId)
+    },
     with: {
+      workout: {
+        columns: {
+          id: true,
+          name: true,
+        },
+      },
       setExercises: {
         orderBy: (fields, { asc }) => asc(fields.exerciseOrder),
         with: {

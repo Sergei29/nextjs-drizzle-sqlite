@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { workoutSchema } from "@/lib/validation"
 import { createNewWorkout, updateWorkout } from "@/lib/actions/workouts"
 import { paths } from "@/lib/utils"
+import WorkoutSets from "./WorkoutSets"
 
 interface Props {
   initialValues?: z.output<typeof workoutSchema> & { id: number }
@@ -135,6 +136,8 @@ const WorkoutForm = ({ initialValues }: Props) => {
             </FormItem>
           )}
         />
+
+        {currentWorkoutId && <WorkoutSets workoutId={currentWorkoutId} />}
 
         <div className="flex justify-end gap-4">
           <Button
