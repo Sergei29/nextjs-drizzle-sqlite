@@ -7,8 +7,10 @@ import React, {
   useRef,
   type Dispatch,
   type SetStateAction,
+  type ReactNode,
 } from "react"
 import { usePathname } from "next/navigation"
+import { Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import type { SetsState } from "./types"
@@ -30,6 +32,7 @@ import WorkoutSetsSortable from "./WorkoutSetsSortable"
 
 interface Props {
   workoutId: number
+  renderTitle?: (sets: SetsState["data"]) => ReactNode
 }
 
 const useFetchSetsByWorkout = ({
@@ -103,7 +106,7 @@ const useFetchSetsByWorkout = ({
   return [workoutSets, setWorkoutSets, isOrderChanged, handleReset]
 }
 
-const WorkoutSets = ({ workoutId }: Props) => {
+const WorkoutSetsReorder = ({ workoutId, renderTitle }: Props) => {
   const pathname = usePathname()
   const [workoutSets, setWorkoutSets, isOrderChanged, handleReset] =
     useFetchSetsByWorkout({
@@ -134,11 +137,8 @@ const WorkoutSets = ({ workoutId }: Props) => {
 
   return (
     <>
-      <h3 className="text-lg font-semibold">{`Currently ${workoutSets.data.length} sets in the workout`}</h3>
+      {renderTitle && renderTitle(workoutSets.data)}
       <div className="flex gap-4">
-        <AddSetNavButton workoutId={workoutId} pathname={pathname}>
-          Add new set
-        </AddSetNavButton>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
             <Button
@@ -146,7 +146,7 @@ const WorkoutSets = ({ workoutId }: Props) => {
               type="button"
               variant="outline"
             >
-              Select/Edit
+              Change sets
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -162,6 +162,15 @@ const WorkoutSets = ({ workoutId }: Props) => {
             <WorkoutSetsSortable state={[workoutSets, setWorkoutSets]} />
 
             <DialogFooter className="justify-end gap-4">
+              <AddSetNavButton
+                workoutId={workoutId}
+                pathname={pathname}
+                className="mr-auto"
+              >
+                <Plus />
+                new set
+              </AddSetNavButton>
+
               <Button type="button" onClick={handleReset} variant="outline">
                 Reset
               </Button>
@@ -176,4 +185,4 @@ const WorkoutSets = ({ workoutId }: Props) => {
   )
 }
 
-export default memo(WorkoutSets)
+export default memo(WorkoutSetsReorder)

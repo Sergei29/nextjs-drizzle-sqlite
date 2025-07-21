@@ -19,11 +19,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import WorkoutSetsReorder from "@/components/forms/WorkoutSetsReorder"
 
 import { workoutSchema } from "@/lib/validation"
 import { createNewWorkout, updateWorkout } from "@/lib/actions/workouts"
 import { paths } from "@/lib/utils"
-import WorkoutSets from "./WorkoutSets"
 
 interface Props {
   initialValues?: z.output<typeof workoutSchema> & { id: number }
@@ -137,7 +137,14 @@ const WorkoutForm = ({ initialValues }: Props) => {
           )}
         />
 
-        {currentWorkoutId && <WorkoutSets workoutId={currentWorkoutId} />}
+        {currentWorkoutId && (
+          <WorkoutSetsReorder
+            workoutId={currentWorkoutId}
+            renderTitle={(sets) => (
+              <h3 className="text-lg font-semibold">{`Currently ${sets.length} sets in the workout`}</h3>
+            )}
+          />
+        )}
 
         <div className="flex justify-end gap-4">
           <Button

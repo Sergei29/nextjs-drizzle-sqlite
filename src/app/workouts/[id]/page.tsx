@@ -7,6 +7,7 @@ import type { PageProps } from "@/types"
 import { Card, CardFooter, CardContent, CardHeader } from "@/components/ui/card"
 import DeleteButton from "@/components/DeleteButton"
 import IconButton from "@/components/IconButton"
+import WorkoutSetsReorder from "@/components/forms/WorkoutSetsReorder"
 import { getWorkoutById, deleteWorkout } from "@/lib/actions/workouts"
 import { paths } from "@/lib/utils"
 
@@ -28,14 +29,16 @@ const WorkoutDetailsPage = async ({ params }: PageProps<{ id: string }>) => {
             {workout.name}
           </h1>
         </CardHeader>
-        <CardContent className="flex-col gap-4">
+        <CardContent className="flex flex-col gap-4">
           <p>
-            <span className="font-bold">About</span>: {workout.description}
+            <span className="font-bold underline text-yellow-500">About</span>:{" "}
+            {workout.description}
           </p>
           <p>
-            {" "}
-            <span className="font-bold">Rest between sets</span>:{" "}
-            {workout.restTime} seconds.
+            <span className="font-bold underline text-yellow-500">
+              Rest between sets
+            </span>
+            : {workout.restTime} seconds.
           </p>
           <ul className="list-disc pl-4">
             {workout.sets.length === 0 && <li>no sets</li>}
@@ -45,6 +48,9 @@ const WorkoutDetailsPage = async ({ params }: PageProps<{ id: string }>) => {
           </ul>
         </CardContent>
         <CardFooter className="justify-end gap-4">
+          <div className="mr-auto">
+            <WorkoutSetsReorder workoutId={workout.id} />
+          </div>
           <IconButton title="Edit" href={paths.workouts(`${workout.id}/edit`)}>
             <SquarePen />
           </IconButton>
