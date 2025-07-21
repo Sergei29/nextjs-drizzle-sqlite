@@ -1,6 +1,6 @@
 "use server"
 
-import { eq, and, not } from "drizzle-orm"
+import { eq, and, not, count } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { ServerActionReturn } from "@/types"
@@ -75,16 +75,7 @@ export const createNewSet = async ({
       return { success: false, errors }
     }
 
-    const [newSet] = await db
-      .insert(sets)
-      .values({
-        name: validation.data.name,
-        description: validation.data.description,
-        restTime: validation.data.restTime,
-        setOrder: validation.data.setOrder,
-        workoutId: validation.data.workoutId,
-      })
-      .returning()
+    const newSet = await createSetWithAutoSwap(validation.data)
 
     revalidatePath(paths.sets())
     revalidatePath(paths.workouts(newSet.workoutId))
@@ -111,6 +102,54 @@ type UpdateSetParams = {
   setOrder: number
   workoutId: number
   description?: string | null | undefined
+}
+
+async function createSetWithAutoSwap(input: Omit<UpdateSetParams, "id">) {
+  const { name, restTime, setOrder, workoutId, description } = input
+
+  return await db.transaction(async (tx) => {
+    // Step 1: Check for a conflicting set
+    const [conflictingSet] = await tx
+      .select()
+      .from(sets)
+      .where(and(eq(sets.workoutId, workoutId), eq(sets.setOrder, setOrder)))
+
+    if (conflictingSet) {
+      // Step 1a: Move conflicting set to a temporary order (-1)
+      await tx
+        .update(sets)
+        .set({ setOrder: -1 }) // TEMP value must not conflict with any real setOrder
+        .where(eq(sets.id, conflictingSet.id))
+    }
+
+    // Step 2: Create the new set
+    const [newSet] = await tx
+      .insert(sets)
+      .values({
+        name,
+        restTime,
+        setOrder,
+        workoutId,
+        description,
+      })
+      .returning()
+
+    // Step 3: If we had a conflicting set, move it to the new setOrder to the last position
+    if (conflictingSet) {
+      const result = await tx
+        .select({ count: count() })
+        .from(sets)
+        .where(eq(sets.workoutId, workoutId))
+      const setsCount = result[0].count
+
+      await tx
+        .update(sets)
+        .set({ setOrder: setsCount + 1 })
+        .where(eq(sets.id, conflictingSet.id))
+    }
+
+    return newSet
+  })
 }
 
 async function updateSetWithAutoSwap(params: UpdateSetParams) {
