@@ -1,7 +1,7 @@
 "use client"
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -30,9 +30,45 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 import { setSchema } from "@/lib/validation"
-import { createNewSet, updateSet } from "@/lib/actions/sets"
-import { paths } from "@/lib/utils"
+import { createNewSet, updateSet, getSetsCount } from "@/lib/actions/sets"
+import { getErrorMessage, paths } from "@/lib/utils"
 import Link from "next/link"
+
+const getOrderOptions = ({ setsTotal }: { setsTotal: number }) => {
+  if (setsTotal) {
+    return Array.from({ length: setsTotal }, (_, i) => i + 1)
+  }
+
+  return [1]
+}
+
+const useSetsCount = ({ workoutId }: { workoutId?: number }) => {
+  const [setsTotal, setSetsTotal] = useState<{
+    data: number
+    isLoading: boolean
+    error: null | string
+  }>({ data: 0, isLoading: false, error: null })
+
+  useEffect(() => {
+    const fetchSetsCount = async () => {
+      try {
+        const count = await getSetsCount({ workoutId })
+        setSetsTotal({ data: count, isLoading: false, error: null })
+      } catch (error) {
+        setSetsTotal((current) => ({
+          ...current,
+          isLoading: false,
+          error: getErrorMessage(error),
+        }))
+        return
+      }
+    }
+
+    fetchSetsCount()
+  }, [workoutId])
+
+  return setsTotal
+}
 
 interface Props {
   workoutId?: number // if need to create Set from Workout details
@@ -72,6 +108,7 @@ const SetForm = ({
         },
   })
   const { isLoading, isSubmitting } = form.formState
+  const setsTotal = useSetsCount({ workoutId: form.watch("workoutId") })
 
   const onSubmit = async (input: z.output<typeof setSchema>) => {
     const response = currentSetId
@@ -158,7 +195,6 @@ const SetForm = ({
                 <Select
                   onValueChange={field.onChange}
                   value={field.value.toString()}
-                  // disabled={!!currentSetId}
                 >
                   <FormControl>
                     <SelectTrigger className="min-w-[250px]">
@@ -166,11 +202,13 @@ const SetForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((order) => (
-                      <SelectItem key={order} value={order.toString()}>
-                        {order}
-                      </SelectItem>
-                    ))}
+                    {getOrderOptions({ setsTotal: setsTotal.data }).map(
+                      (order) => (
+                        <SelectItem key={order} value={order.toString()}>
+                          {order}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
                 <FormDescription className="text-xs">
@@ -189,7 +227,7 @@ const SetForm = ({
             <FormItem>
               <FormLabel className="text-xs">Name</FormLabel>
               <FormControl>
-                <Input placeholder="Workout name" {...field} />
+                <Input placeholder="Set name" {...field} />
               </FormControl>
               <FormDescription className="text-xs">
                 What is the set title ?

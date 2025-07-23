@@ -54,6 +54,18 @@ export const getSetsBy = async ({
   return data
 }
 
+export const getSetsCount = async ({ workoutId }: { workoutId?: number }) => {
+  if (!workoutId) {
+    return 0
+  }
+
+  const data = await db.query.sets.findMany({
+    where: eq(sets.workoutId, workoutId),
+  })
+
+  return data.length
+}
+
 export const createNewSet = async ({
   input,
 }: {

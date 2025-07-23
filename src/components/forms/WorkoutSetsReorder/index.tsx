@@ -141,11 +141,7 @@ const WorkoutSetsReorder = ({ workoutId, renderTitle }: Props) => {
       <div className="flex gap-4">
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
-            <Button
-              disabled={!workoutSets.data.length}
-              type="button"
-              variant="outline"
-            >
+            <Button type="button" variant="outline">
               Change sets
             </Button>
           </DialogTrigger>
