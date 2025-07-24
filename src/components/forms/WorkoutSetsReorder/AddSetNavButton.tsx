@@ -10,11 +10,17 @@ interface Props {
   workoutId: number
   pathname: string
   children: ReactNode
+  className?: string
 }
 
-const AddSetNavButton = ({ children, workoutId, pathname }: Props) => {
+const AddSetNavButton = ({
+  children,
+  workoutId,
+  pathname,
+  className,
+}: Props) => {
   return (
-    <Button asChild>
+    <Button asChild className={className}>
       <Link
         href={{
           pathname: paths.sets(`create`),
