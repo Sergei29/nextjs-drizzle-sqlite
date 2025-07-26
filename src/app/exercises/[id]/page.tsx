@@ -82,7 +82,16 @@ const ExerciseDetailsPage = async ({ params }: PageProps<{ id: string }>) => {
         <IconButton title="Edit" href={paths.exercises(`${exercise.id}/edit`)}>
           <SquarePen />
         </IconButton>
-        <DeleteButton id={exercise.id} action={deleteExerciseIfUnused} />
+        <DeleteButton
+          id={exercise.id}
+          disabled={exercise.sets.length > 0}
+          title={
+            exercise.sets.length > 0
+              ? `Cannot delete exercise with ${exercise.sets.length} sets`
+              : "Delete"
+          }
+          action={deleteExerciseIfUnused}
+        />
       </CardFooter>
     </Card>
   )

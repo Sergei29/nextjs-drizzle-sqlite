@@ -45,7 +45,7 @@ const ExercisesList = async ({ setId }: Props) => {
                 </CardTitle>
                 <CardDescription className="text-xs">
                   {!!reps ? `Reps: ${reps}` : ""}
-                  {!!duration ? `, Duration: ${duration} seconds` : ""}
+                  {!!duration ? `Duration: ${duration} seconds` : ""}
                 </CardDescription>
                 <CardAction>
                   <DeleteButton id={id} action={deleteExerciseIfUnused} />

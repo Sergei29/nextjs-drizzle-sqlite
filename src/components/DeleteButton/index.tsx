@@ -13,9 +13,11 @@ interface Props {
   action: (
     id: number,
   ) => Promise<ServerActionReturn<{ id: number; name: string }>>
+  disabled?: boolean
+  title?: string
 }
 
-const DeleteButton = ({ action, id }: Props) => {
+const DeleteButton = ({ action, id, disabled, title }: Props) => {
   const [state, formAction, isPending] = useActionState(action.bind(null, id), {
     success: false,
     errors: [],
@@ -35,9 +37,9 @@ const DeleteButton = ({ action, id }: Props) => {
     <form action={formAction}>
       <IconButton
         type="submit"
-        disabled={isPending}
-        title="Delete"
-        className="border border-red-600 text-red-600 hover:border-red-700 hover:text-red-700 active:text-red-900 active:border-red-900 z-10 relative"
+        disabled={isPending || disabled}
+        title={title || "Delete"}
+        className="border border-red-600 text-red-600 hover:border-red-700 hover:text-red-700 active:text-red-900 active:border-red-900 disabled:opacity-50 z-10 relative"
       >
         <Trash2 />
       </IconButton>

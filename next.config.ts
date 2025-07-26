@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       "liftmanual.com",
       "s3assets.skimble.com",
       "www.inspireusafoundation.org",
+      "fitnessvolt.com",
     ],
   },
 }
