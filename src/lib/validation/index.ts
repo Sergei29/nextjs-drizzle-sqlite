@@ -37,6 +37,9 @@ export const exerciseSchema = z
     duration: z.coerce
       .number()
       .optional() as unknown as z.ZodCoercedNumber<number>,
+
+    setId: z.number().int().positive().optional(),
+    exerciseOrder: z.number().int().min(0).optional(),
   })
   .refine(
     (data) => {
@@ -50,5 +53,14 @@ export const exerciseSchema = z
     {
       message: "Either reps or duration is to be provided",
       path: ["reps"],
+    },
+  )
+  .refine(
+    (data) =>
+      (data.setId !== undefined && data.exerciseOrder !== undefined) ||
+      (data.setId === undefined && data.exerciseOrder === undefined),
+    {
+      message: "Both setId and exerciseOrder must be provided together",
+      path: ["exerciseOrder"], // optional: show error under `exerciseOrder`
     },
   )

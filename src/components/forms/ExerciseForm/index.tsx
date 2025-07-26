@@ -1,11 +1,10 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
-import Link from "next/link"
 import { z } from "zod"
 
 import {
@@ -17,20 +16,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 import { exerciseSchema } from "@/lib/validation"
-import { createNewSet, updateSet, getSetsCount } from "@/lib/actions/sets"
+import { createExercise, updateExercise } from "@/lib/actions/exercises"
 import { getErrorMessage, paths } from "@/lib/utils"
 
 interface Props {
@@ -38,6 +29,9 @@ interface Props {
 }
 
 const ExerciseForm = ({ initialValues }: Props) => {
+  const router = useRouter()
+  const search = useSearchParams()
+  const callbackUrl = search.get("callbackUrl")
   const { id: exerciseId, ...currentFields } = initialValues || {}
 
   const form = useForm<z.infer<typeof exerciseSchema>>({
@@ -55,8 +49,22 @@ const ExerciseForm = ({ initialValues }: Props) => {
   })
   const { isLoading, isSubmitting, errors } = form.formState
 
-  const onSubmit = async (data: z.output<typeof exerciseSchema>) => {
-    console.log("data :>> ", data)
+  const onSubmit = async (formValues: z.output<typeof exerciseSchema>) => {
+    if (isLoading || isSubmitting) return
+    const result = exerciseId
+      ? await updateExercise(exerciseId, formValues)
+      : await createExercise(formValues)
+
+    if (result.success) {
+      toast.success(
+        `Exercise ${exerciseId ? "updated" : "created"} successfully!`,
+      )
+      router.push(callbackUrl || paths.exercises(exerciseId))
+    } else {
+      toast.error(
+        `Failed to ${exerciseId ? "update" : "create"} exercise: ${result.errors.map(getErrorMessage).join(", ")}`,
+      )
+    }
   }
 
   return (

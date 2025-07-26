@@ -1,7 +1,9 @@
+import { Suspense } from "react"
 import { Plus } from "lucide-react"
 
 import type { Metadata } from "next"
 
+import ExercisesList from "@/components/ExercisesList"
 import IconButton from "@/components/IconButton"
 import { paths } from "@/lib/utils"
 
@@ -18,6 +20,9 @@ const ExercisesListPage = async () => {
           <Plus />
         </IconButton>
       </div>
+      <Suspense fallback={<p>Loading exercises...</p>}>
+        <ExercisesList />
+      </Suspense>
     </>
   )
 }
