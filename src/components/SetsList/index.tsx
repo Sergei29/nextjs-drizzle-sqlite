@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-
 import { getSetsBy, deleteSet } from "@/lib/actions/sets"
 import DeleteButton from "@/components/DeleteButton"
 import { paths } from "@/lib/utils"

@@ -6,8 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
-import Link from "next/link"
 import { z } from "zod"
+
+import type { AsyncState } from "@/types"
 
 import {
   Form,
@@ -25,14 +26,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
+import AddSelectExercises from "@/components/forms/AddSelectExercises"
+import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 
-import { setSchema } from "@/lib/validation"
 import { createNewSet, updateSet, getSetsCount } from "@/lib/actions/sets"
 import { getErrorMessage, paths } from "@/lib/utils"
+import { setSchema } from "@/lib/validation"
 
 const getOrderOptions = ({ setsTotal }: { setsTotal: number }) => {
   if (setsTotal) {
@@ -43,11 +44,11 @@ const getOrderOptions = ({ setsTotal }: { setsTotal: number }) => {
 }
 
 const useSetsCount = ({ workoutId }: { workoutId?: number }) => {
-  const [setsTotal, setSetsTotal] = useState<{
-    data: number
-    isLoading: boolean
-    error: null | string
-  }>({ data: 0, isLoading: false, error: null })
+  const [setsTotal, setSetsTotal] = useState<AsyncState<number>>({
+    data: null,
+    isLoading: false,
+    error: null,
+  })
 
   useEffect(() => {
     const fetchSetsCount = async () => {
@@ -73,22 +74,13 @@ const useSetsCount = ({ workoutId }: { workoutId?: number }) => {
 interface Props {
   workoutId?: number // if need to create Set from Workout details
   initialValues?: z.output<typeof setSchema> & { id: number } // if updating existing Set
-  setExercises?: {
-    id: number
-    name: string
-  }[]
   workoutOptions: {
     name: string
     id: number
   }[]
 }
 
-const SetForm = ({
-  initialValues,
-  workoutId,
-  setExercises = [],
-  workoutOptions,
-}: Props) => {
+const SetForm = ({ initialValues, workoutId, workoutOptions }: Props) => {
   const router = useRouter()
   const search = useSearchParams()
   const callbackUrl = search.get("callbackUrl")
@@ -124,7 +116,10 @@ const SetForm = ({
       toast(`Set has been ${currentSetId ? "updated" : "created"}.`, {
         description: `"${response.data.name}"`,
       })
-      // will navigate to workout page if came from Workout. or Set page if updating or Sets page if creating
+      /**
+       * will navigate to workout page if came from Workout.
+       * or Set page if updating or Sets page if creating
+       */
       router.push(callbackUrl ? callbackUrl : paths.sets(initialValues?.id))
     } else {
       toast(`Set ${currentSetId ? "update" : "create"} error.`)
@@ -202,7 +197,7 @@ const SetForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {getOrderOptions({ setsTotal: setsTotal.data }).map(
+                    {getOrderOptions({ setsTotal: setsTotal.data ?? 0 }).map(
                       (order) => (
                         <SelectItem key={order} value={order.toString()}>
                           {order}
@@ -275,40 +270,7 @@ const SetForm = ({
           )}
         />
 
-        <Card>
-          <CardHeader>
-            <h3 className="font-semibold text-sm">
-              {setExercises.length ? "Set exercises:" : "No exercises yet"}
-            </h3>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid sm:grid-cols-3 gap-2">
-              {setExercises.map(({ id, name }) => {
-                return (
-                  <li
-                    key={id}
-                    className="p-2 rounded-lg border border-slate-300 flex flex-col gap-2"
-                  >
-                    <span>{name}</span>
-                    <span className="flex gap-2">
-                      <Link href={paths.exercises(id)}>edit</Link>
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          </CardContent>
-          <CardFooter>
-            <Button
-              type="button"
-              onClick={() => {
-                // open exercises modal
-              }}
-            >
-              add exercise
-            </Button>
-          </CardFooter>
-        </Card>
+        <AddSelectExercises setId={currentSetId} />
 
         <div className="flex justify-end gap-4">
           <Button

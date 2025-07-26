@@ -6,6 +6,7 @@ import type { PageProps } from "@/types"
 
 import { getSetsBy, deleteSet } from "@/lib/actions/sets"
 import { Card, CardFooter, CardContent, CardHeader } from "@/components/ui/card"
+import AddSelectExercises from "@/components/forms/AddSelectExercises"
 import DeleteButton from "@/components/DeleteButton"
 import IconButton from "@/components/IconButton"
 import { paths } from "@/lib/utils"
@@ -42,6 +43,7 @@ const SetDetailsPage = async ({ params }: PageProps<{ id: string }>) => {
         </ul>
       </CardContent>
       <CardFooter className="justify-end gap-4">
+        <AddSelectExercises setId={set.id} title="" className="mr-auto" />
         <IconButton title="Edit" href={paths.sets(`${set.id}/edit`)}>
           <SquarePen />
         </IconButton>

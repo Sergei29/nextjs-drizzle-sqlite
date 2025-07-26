@@ -6,6 +6,12 @@ export type PageProps<
   searchParams: Promise<Q>
 }
 
+export type AsyncState<D> = {
+  isLoading: boolean
+  data: D | null
+  error: string | null
+}
+
 export type ServerActionReturn<D> =
   | {
       success: true
