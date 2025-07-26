@@ -27,3 +27,40 @@ export const setSchema = z.object({
     .number()
     .min(1, "Workout ID is required") as z.ZodCoercedNumber<number>,
 })
+
+export const exerciseSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    description: z.string().optional(),
+    imageUrl: z.string().optional(),
+    reps: z.coerce.number().optional() as unknown as z.ZodCoercedNumber<number>,
+    duration: z.coerce
+      .number()
+      .optional() as unknown as z.ZodCoercedNumber<number>,
+
+    setId: z.number().int().positive().optional(),
+    exerciseOrder: z.number().int().min(0).optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.reps && !data.duration) {
+        return false
+      } else if (data.reps && data.duration) {
+        return false
+      }
+      return true
+    },
+    {
+      message: "Either reps or duration is to be provided",
+      path: ["reps"],
+    },
+  )
+  .refine(
+    (data) =>
+      (data.setId !== undefined && data.exerciseOrder !== undefined) ||
+      (data.setId === undefined && data.exerciseOrder === undefined),
+    {
+      message: "Both setId and exerciseOrder must be provided together",
+      path: ["exerciseOrder"], // optional: show error under `exerciseOrder`
+    },
+  )

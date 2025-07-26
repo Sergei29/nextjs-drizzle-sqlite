@@ -156,7 +156,7 @@ async function createSetWithAutoSwap(input: Omit<UpdateSetParams, "id">) {
 
       await tx
         .update(sets)
-        .set({ setOrder: setsCount + 1 })
+        .set({ setOrder: setsCount + 1, updatedAt: new Date().toISOString() })
         .where(eq(sets.id, conflictingSet.id))
     }
 
@@ -188,7 +188,14 @@ async function updateSetWithAutoSwap(params: UpdateSetParams) {
     if (currentSetOrder === newSetOrder) {
       const [updated] = await tx
         .update(sets)
-        .set({ name, restTime, setOrder: newSetOrder, workoutId, description })
+        .set({
+          name,
+          restTime,
+          setOrder: newSetOrder,
+          workoutId,
+          description,
+          updatedAt: new Date().toISOString(),
+        })
         .where(eq(sets.id, id))
         .returning()
       return updated
@@ -216,7 +223,7 @@ async function updateSetWithAutoSwap(params: UpdateSetParams) {
       // Step 3b: Move conflicting set to the currentSetOrder
       await tx
         .update(sets)
-        .set({ setOrder: currentSetOrder })
+        .set({ setOrder: currentSetOrder, updatedAt: new Date().toISOString() })
         .where(eq(sets.id, conflictingSet.id))
 
       // Step 3c: Now move current set to desired newSetOrder
@@ -228,6 +235,7 @@ async function updateSetWithAutoSwap(params: UpdateSetParams) {
           setOrder: newSetOrder,
           workoutId,
           description,
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(sets.id, id))
         .returning()
@@ -243,6 +251,7 @@ async function updateSetWithAutoSwap(params: UpdateSetParams) {
           setOrder: newSetOrder,
           workoutId,
           description,
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(sets.id, id))
         .returning()
@@ -280,29 +289,6 @@ export const updateSet = async ({
       id: setId,
     })
 
-    // const updatedSet = await db.transaction(async (tx) => {
-    //   // Step 1: Move temporarily out of the way
-    //   await tx
-    //     .update(sets)
-    //     .set({ setOrder: 9999 }) // some high temp number
-    //     .where(eq(sets.id, setId))
-
-    //   // Step 2: Move to desired position
-    //   const [updatedSet] = await tx
-    //     .update(sets)
-    //     .set({
-    //       name: validation.data.name,
-    //       description: validation.data.description,
-    //       restTime: validation.data.restTime,
-    //       setOrder: validation.data.setOrder,
-    //       workoutId: validation.data.workoutId,
-    //     })
-    //     .where(eq(sets.id, setId))
-    //     .returning()
-
-    //   return updatedSet
-    // })
-
     revalidatePath(paths.sets())
     revalidatePath(paths.workouts(updatedSet.workoutId))
     return {
@@ -313,7 +299,6 @@ export const updateSet = async ({
       },
     }
   } catch (error) {
-    console.log("error :>> ", error)
     return {
       success: false,
       errors: [{ root: getErrorMessage(error) }],
@@ -370,7 +355,10 @@ export const reorderSets = async ({
       // STEP 2: Apply actual new ordering
       await Promise.all(
         reorderedSets.map(({ id, setOrder }) =>
-          tx.update(sets).set({ setOrder }).where(eq(sets.id, id)),
+          tx
+            .update(sets)
+            .set({ setOrder, updatedAt: new Date().toISOString() })
+            .where(eq(sets.id, id)),
         ),
       )
     })

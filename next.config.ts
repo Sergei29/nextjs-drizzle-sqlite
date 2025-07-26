@@ -1,7 +1,15 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  images: {
+    domains: [
+      "homegymreview.co.uk",
+      "liftmanual.com",
+      "s3assets.skimble.com",
+      "www.inspireusafoundation.org",
+      "fitnessvolt.com",
+    ],
+  },
+}
 
-export default nextConfig;
+export default nextConfig

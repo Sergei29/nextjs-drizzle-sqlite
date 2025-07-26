@@ -21,38 +21,33 @@ const SetDetailsPage = async ({ params }: PageProps<{ id: string }>) => {
   }
 
   return (
-    <>
-      {" "}
-      <Card>
-        <CardHeader>
-          <h1 className="text-3xl font-bold underline text-center">
-            {set.name}
-          </h1>
-        </CardHeader>
-        <CardContent className="flex-col gap-4">
-          <p>
-            <span className="font-bold">About</span>: {set.description}
-          </p>
-          <p>
-            {" "}
-            <span className="font-bold">Rest between exercises</span>:{" "}
-            {set.restTime} seconds.
-          </p>
-          <ul className="list-disc pl-4">
-            {set.setExercises.length === 0 && <li>no exercises</li>}
-            {set.setExercises.map((exercise) => {
-              return <li key={exercise.exerciseId}>{exercise.exercise.name}</li>
-            })}
-          </ul>
-        </CardContent>
-        <CardFooter className="justify-end gap-4">
-          <IconButton title="Edit" href={paths.sets(`${set.id}/edit`)}>
-            <SquarePen />
-          </IconButton>
-          <DeleteButton id={set.id} action={deleteSet} />
-        </CardFooter>
-      </Card>
-    </>
+    <Card>
+      <CardHeader>
+        <h1 className="text-3xl font-bold underline text-center">{set.name}</h1>
+      </CardHeader>
+      <CardContent className="flex-col gap-4">
+        <p>
+          <span className="font-bold">About</span>: {set.description}
+        </p>
+        <p>
+          {" "}
+          <span className="font-bold">Rest between exercises</span>:{" "}
+          {set.restTime} seconds.
+        </p>
+        <ul className="list-disc pl-4">
+          {set.setExercises.length === 0 && <li>no exercises</li>}
+          {set.setExercises.map((exercise) => {
+            return <li key={exercise.exerciseId}>{exercise.exercise.name}</li>
+          })}
+        </ul>
+      </CardContent>
+      <CardFooter className="justify-end gap-4">
+        <IconButton title="Edit" href={paths.sets(`${set.id}/edit`)}>
+          <SquarePen />
+        </IconButton>
+        <DeleteButton id={set.id} action={deleteSet} />
+      </CardFooter>
+    </Card>
   )
 }
 
