@@ -124,6 +124,58 @@ export const getAllExercisesWithOptionalSetInfo = async (setId?: number) => {
   return Array.from(grouped.values())
 }
 
+export type OrderedExercise = {
+  id: number
+  name: string
+  duration: number | null
+  reps: number | null
+  exerciseOrder?: number
+}
+
+/**
+ * Fetch all exercises.
+ * - Optionally include `exerciseOrder` only if the exercise is used in a specific `setId`.
+ * - used in `AddSelectExercises` to show exercises with their order in a set.
+ * @param setId - Optional set ID to filter exercises by a specific set.
+ * @return {Promise<OrderedExercise[]>} - List of exercises with optional order.
+ */
+export const getAllExercisesWithOptionalOrder = async (setId?: number) => {
+  const rows = await db
+    .select({
+      id: exercises.id,
+      name: exercises.name,
+      duration: exercises.duration,
+      reps: exercises.reps,
+      setId: setExercises.setId,
+      exerciseOrder: setExercises.exerciseOrder,
+    })
+    .from(exercises)
+    .leftJoin(setExercises, eq(setExercises.exerciseId, exercises.id))
+    .orderBy(exercises.id)
+
+  // Group by exerciseId to avoid duplicates in case exercise belongs to multiple sets
+  const seen = new Map<number, OrderedExercise>()
+
+  for (const row of rows) {
+    if (!seen.has(row.id)) {
+      const entry: OrderedExercise = {
+        id: row.id,
+        name: row.name,
+        duration: row.duration,
+        reps: row.reps,
+        ...(setId !== undefined &&
+        row.setId === setId &&
+        row.exerciseOrder !== null
+          ? { exerciseOrder: row.exerciseOrder }
+          : {}),
+      }
+      seen.set(row.id, entry)
+    }
+  }
+
+  return Array.from(seen.values())
+}
+
 type Exercise = {
   id: number
   name: string
@@ -301,41 +353,14 @@ export const updateExercise = async (
   }
 }
 
+const idSchema = z.number().int().positive()
+
 /**
  * Cascading Deletes: What happens to `set_exercises`?
  * So when you delete an exercise, Drizzle/SQLite will
  * automatically delete any related rows in `set_exercises`.
  * No need to manually delete from `set_exercises` — the database handles it.
  */
-export const deleteExercise = async (
-  exerciseId: number,
-): Promise<ServerActionReturn<{ id: number; name: string }>> => {
-  try {
-    const [deleted] = await db
-      .delete(exercises)
-      .where(eq(exercises.id, exerciseId))
-      .returning()
-
-    revalidatePath(paths.exercises(exerciseId))
-    revalidatePath(paths.exercises())
-
-    return {
-      success: true,
-      data: {
-        id: deleted.id,
-        name: deleted.name,
-      },
-    }
-  } catch (error) {
-    return {
-      success: false,
-      errors: [{ root: getErrorMessage(error) }],
-    }
-  }
-}
-
-const idSchema = z.number().int().positive()
-
 export const deleteExerciseIfUnused = async (
   rawId: unknown,
 ): Promise<ServerActionReturn<{ id: number; name: string }>> => {

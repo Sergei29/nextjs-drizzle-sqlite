@@ -31,7 +31,6 @@ const SetDetailsPage = async ({ params }: PageProps<{ id: string }>) => {
           <span className="font-bold">About</span>: {set.description}
         </p>
         <p>
-          {" "}
           <span className="font-bold">Rest between exercises</span>:{" "}
           {set.restTime} seconds.
         </p>
