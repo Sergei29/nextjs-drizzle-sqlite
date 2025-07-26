@@ -11,35 +11,6 @@ import { getErrorMessage, paths } from "@/lib/utils"
 import { exercises, setExercises, sets, workouts } from "@drizzle/schema"
 import { db } from "@/lib/db"
 
-export const getExercisesBy = async ({ id }: { id?: number }) => {
-  const exercisesWithSets = await db.query.exercises.findMany({
-    where: id ? (fields, { eq }) => eq(fields.id, id) : undefined,
-    orderBy: (fields, { asc }) => asc(fields.name),
-  })
-  return exercisesWithSets
-}
-
-export const getExercisesBySetId = async (setId: number) => {
-  const results = await db
-    .select({
-      exerciseId: exercises.id,
-      name: exercises.name,
-      description: exercises.description,
-      imageUrl: exercises.imageUrl,
-      reps: exercises.reps,
-      duration: exercises.duration,
-      order: setExercises.exerciseOrder,
-      createdAt: exercises.createdAt,
-      updatedAt: exercises.updatedAt,
-    })
-    .from(setExercises)
-    .where(eq(setExercises.setId, setId))
-    .innerJoin(exercises, eq(setExercises.exerciseId, exercises.id))
-    .orderBy(setExercises.exerciseOrder) // 👈 Sort by exercise order within the set
-
-  return results
-}
-
 type DetailedExercise = {
   id: number
   name: string
@@ -50,9 +21,53 @@ type DetailedExercise = {
   sets: {
     setId: number
     setName: string | null
-    workoutId: number
+    workoutId: number | null
     workoutName: string | null
   }[]
+}
+
+export const getExerciseByIdWithSets = async (
+  exerciseId: number,
+): Promise<DetailedExercise | null> => {
+  const rows = await db
+    .select({
+      exerciseId: exercises.id,
+      exerciseName: exercises.name,
+      exerciseDescription: exercises.description,
+      imageUrl: exercises.imageUrl,
+      reps: exercises.reps,
+      duration: exercises.duration,
+      setId: sets.id,
+      setName: sets.name,
+      workoutId: workouts.id,
+      workoutName: workouts.name,
+    })
+    .from(exercises)
+    .leftJoin(setExercises, eq(setExercises.exerciseId, exercises.id))
+    .leftJoin(sets, eq(setExercises.setId, sets.id))
+    .leftJoin(workouts, eq(sets.workoutId, workouts.id))
+    .where(eq(exercises.id, exerciseId))
+
+  if (rows.length === 0) return null
+
+  const first = rows[0]
+
+  return {
+    id: first.exerciseId,
+    name: first.exerciseName,
+    description: first.exerciseDescription,
+    imageUrl: first.imageUrl,
+    reps: first.reps,
+    duration: first.duration,
+    sets: rows
+      .filter((r) => !!r.setId)
+      .map((r) => ({
+        setId: r.setId as number,
+        setName: r.setName,
+        workoutId: r.workoutId,
+        workoutName: r.workoutName,
+      })),
+  }
 }
 
 export const getAllExercisesWithOptionalSetInfo = async (setId?: number) => {
@@ -82,11 +97,11 @@ export const getAllExercisesWithOptionalSetInfo = async (setId?: number) => {
   for (const row of rows) {
     const existing = grouped.get(row.exerciseId)
     const setEntry =
-      row.setId != null
+      row.setId !== null
         ? {
             setId: row.setId,
             setName: row.setName,
-            workoutId: row.workoutId!,
+            workoutId: row.workoutId,
             workoutName: row.workoutName,
           }
         : null
